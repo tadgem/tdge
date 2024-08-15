@@ -1,29 +1,15 @@
 #include <array>
 #include <iostream>
-#include <stdexcept>
-#include <SDL.h>
+#include "engine.h"
+#include "shader.h"
 #include "arcball_camera.h"
-#include "sdl2webgpu.h"
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
-#ifdef EMSCRIPTEN
-#include <emscripten/emscripten.h>
-#include <emscripten/html5.h>
-#include <emscripten/html5_webgpu.h>
-#endif
-
-#include <webgpu/webgpu_cpp.h>
 
 #include "embedded_files.h"
 
 struct AppState {
-    wgpu::Instance instance;
-    wgpu::Adapter adapter;
-    wgpu::Device device;
-    wgpu::Queue queue;
-
-    wgpu::Surface surface;
     wgpu::RenderPipeline render_pipeline;
 
     wgpu::Buffer vertex_buf;
@@ -48,165 +34,15 @@ glm::vec2 transform_mouse(glm::vec2 in)
 
 void app_loop(void *_app_state);
 
-#ifndef __EMSCRIPTEN__
-// TODO: move to another file
-wgpu::Adapter request_adapter(wgpu::Instance &instance,
-                              const wgpu::RequestAdapterOptions &options)
-{
-    struct Result {
-        WGPUAdapter adapter = nullptr;
-        bool success = false;
-    };
-
-    Result result;
-    instance.RequestAdapter(
-        &options,
-        [](WGPURequestAdapterStatus status,
-           WGPUAdapter adapter,
-           const char *msg,
-           void *user_data) {
-            Result *res = reinterpret_cast<Result *>(user_data);
-            if (status == WGPURequestAdapterStatus_Success) {
-                res->adapter = adapter;
-                res->success = true;
-            } else {
-                std::cerr << "Failed to get WebGPU adapter: " << msg << std::endl;
-            }
-        },
-        &result);
-
-    if (!result.success) {
-        throw std::runtime_error("Failed to get WebGPU adapter");
-    }
-
-    return wgpu::Adapter::Acquire(result.adapter);
-}
-
-wgpu::Device request_device(wgpu::Adapter &adapter, const wgpu::DeviceDescriptor &options)
-{
-    struct Result {
-        WGPUDevice device = nullptr;
-        bool success = false;
-    };
-
-    Result result;
-    adapter.RequestDevice(
-        &options,
-        [](WGPURequestDeviceStatus status,
-           WGPUDevice device,
-           const char *msg,
-           void *user_data) {
-            Result *res = reinterpret_cast<Result *>(user_data);
-            if (status == WGPURequestDeviceStatus_Success) {
-                res->device = device;
-                res->success = true;
-            } else {
-                std::cerr << "Failed to get WebGPU device: " << msg << std::endl;
-            }
-        },
-        &result);
-
-    if (!result.success) {
-        throw std::runtime_error("Failed to get WebGPU device");
-    }
-
-    return wgpu::Device::Acquire(result.device);
-}
-#endif
-
 int main(int argc, const char **argv)
 {
     AppState *app_state = new AppState;
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
-        std::cerr << "Failed to init SDL: " << SDL_GetError() << "\n";
-        return -1;
-    }
+    tdg::engine::init();
 
-    SDL_Window *window = SDL_CreateWindow("SDL2 + WebGPU",
-                                          SDL_WINDOWPOS_UNDEFINED,
-                                          SDL_WINDOWPOS_UNDEFINED,
-                                          win_width,
-                                          win_height,
-                                          0);
 
-    app_state->instance = wgpu::CreateInstance();
-    app_state->surface =
-        wgpu::Surface::Acquire(sdl2GetWGPUSurface(app_state->instance.Get(), window));
+    wgpu::ShaderModule shader_module = tdg::shader::compile_wgsl(reinterpret_cast<const char *>(triangle_wgsl));
 
-#ifdef EMSCRIPTEN
-    // The adapter/device request has already been done for us in the TypeScript code
-    // when running in Emscripten
-    app_state->device = wgpu::Device::Acquire(emscripten_webgpu_get_device());
-#else
-    wgpu::RequestAdapterOptions adapter_options = {};
-    adapter_options.compatibleSurface = app_state->surface;
-    adapter_options.powerPreference = wgpu::PowerPreference::HighPerformance;
-    app_state->adapter = request_adapter(app_state->instance, adapter_options);
-
-    wgpu::DeviceDescriptor device_options = {};
-    app_state->device = request_device(app_state->adapter, device_options);
-#endif
-
-    app_state->device.SetUncapturedErrorCallback(
-        [](WGPUErrorType type, const char *msg, void *data) {
-            std::cout << "WebGPU Error: " << msg << "\n" << std::flush;
-#ifdef EMSCRIPTEN
-            emscripten_cancel_main_loop();
-            emscripten_force_exit(1);
-#endif
-            std::exit(1);
-        },
-        nullptr);
-
-    app_state->queue = app_state->device.GetQueue();
-
-    wgpu::SurfaceConfiguration surface_config;
-    surface_config.device = app_state->device;
-    surface_config.format = wgpu::TextureFormat::BGRA8Unorm;
-    surface_config.width = win_width;
-    surface_config.height = win_height;
-
-    app_state->surface.Configure(&surface_config);
-
-    wgpu::ShaderModule shader_module;
-    {
-        wgpu::ShaderModuleWGSLDescriptor shader_module_wgsl;
-        shader_module_wgsl.code = reinterpret_cast<const char *>(triangle_wgsl);
-
-        wgpu::ShaderModuleDescriptor shader_module_desc;
-        shader_module_desc.nextInChain = &shader_module_wgsl;
-        shader_module = app_state->device.CreateShaderModule(&shader_module_desc);
-
-        shader_module.GetCompilationInfo(
-            [](WGPUCompilationInfoRequestStatus status,
-               WGPUCompilationInfo const *info,
-               void *) {
-                if (info->messageCount != 0) {
-                    std::cout << "Shader compilation info:\n";
-                    for (uint32_t i = 0; i < info->messageCount; ++i) {
-                        const auto &m = info->messages[i];
-                        std::cout << m.lineNum << ":" << m.linePos << ": ";
-                        switch (m.type) {
-                        case WGPUCompilationMessageType_Error:
-                            std::cout << "error";
-                            break;
-                        case WGPUCompilationMessageType_Warning:
-                            std::cout << "warning";
-                            break;
-                        case WGPUCompilationMessageType_Info:
-                            std::cout << "info";
-                            break;
-                        default:
-                            break;
-                        }
-
-                        std::cout << ": " << m.message << "\n";
-                    }
-                }
-            },
-            nullptr);
-    }
 
     // Upload vertex data
     const std::vector<float> vertex_data = {
@@ -221,7 +57,7 @@ int main(int argc, const char **argv)
     buffer_desc.mappedAtCreation = true;
     buffer_desc.size = vertex_data.size() * sizeof(float);
     buffer_desc.usage = wgpu::BufferUsage::Vertex;
-    app_state->vertex_buf = app_state->device.CreateBuffer(&buffer_desc);
+    app_state->vertex_buf = tdg::engine::gpu.device.CreateBuffer(&buffer_desc);
     std::memcpy(app_state->vertex_buf.GetMappedRange(), vertex_data.data(), buffer_desc.size);
     app_state->vertex_buf.Unmap();
 
@@ -265,14 +101,14 @@ int main(int argc, const char **argv)
     view_params_bg_layout_desc.entries = &view_param_layout_entry;
 
     wgpu::BindGroupLayout view_params_bg_layout =
-        app_state->device.CreateBindGroupLayout(&view_params_bg_layout_desc);
+        tdg::engine::gpu.device.CreateBindGroupLayout(&view_params_bg_layout_desc);
 
     wgpu::PipelineLayoutDescriptor pipeline_layout_desc = {};
     pipeline_layout_desc.bindGroupLayoutCount = 1;
     pipeline_layout_desc.bindGroupLayouts = &view_params_bg_layout;
 
     wgpu::PipelineLayout pipeline_layout =
-        app_state->device.CreatePipelineLayout(&pipeline_layout_desc);
+        tdg::engine::gpu.device.CreatePipelineLayout(&pipeline_layout_desc);
 
     wgpu::RenderPipelineDescriptor render_pipeline_desc;
     render_pipeline_desc.vertex = vertex_state;
@@ -280,14 +116,14 @@ int main(int argc, const char **argv)
     render_pipeline_desc.layout = pipeline_layout;
     // Default primitive state is what we want, triangle list, no indices
 
-    app_state->render_pipeline = app_state->device.CreateRenderPipeline(&render_pipeline_desc);
+    app_state->render_pipeline = tdg::engine::gpu.device.CreateRenderPipeline(&render_pipeline_desc);
 
     // Create the UBO for our bind group
     wgpu::BufferDescriptor ubo_buffer_desc;
     ubo_buffer_desc.mappedAtCreation = false;
     ubo_buffer_desc.size = 16 * sizeof(float);
     ubo_buffer_desc.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
-    app_state->view_param_buf = app_state->device.CreateBuffer(&ubo_buffer_desc);
+    app_state->view_param_buf = tdg::engine::gpu.device.CreateBuffer(&ubo_buffer_desc);
 
     wgpu::BindGroupEntry view_param_bg_entry = {};
     view_param_bg_entry.binding = 0;
@@ -299,7 +135,7 @@ int main(int argc, const char **argv)
     bind_group_desc.entryCount = 1;
     bind_group_desc.entries = &view_param_bg_entry;
 
-    app_state->bind_group = app_state->device.CreateBindGroup(&bind_group_desc);
+    app_state->bind_group = tdg::engine::gpu.device.CreateBindGroup(&bind_group_desc);
 
     app_state->proj = glm::perspective(
         glm::radians(50.f), static_cast<float>(win_width) / win_height, 0.1f, 100.f);
@@ -311,7 +147,7 @@ int main(int argc, const char **argv)
     while (!app_state->done) {
         app_loop(app_state);
     }
-    SDL_DestroyWindow(window);
+    SDL_DestroyWindow(tdg::engine::gpu.window);
     SDL_Quit();
 #endif
 
@@ -356,7 +192,7 @@ void app_loop(void *_app_state)
         upload_buffer_desc.mappedAtCreation = true;
         upload_buffer_desc.size = 16 * sizeof(float);
         upload_buffer_desc.usage = wgpu::BufferUsage::CopySrc;
-        upload_buf = app_state->device.CreateBuffer(&upload_buffer_desc);
+        upload_buf = tdg::engine::gpu.device.CreateBuffer(&upload_buffer_desc);
 
         const glm::mat4 proj_view = app_state->proj * app_state->camera.transform();
 
@@ -366,7 +202,7 @@ void app_loop(void *_app_state)
     }
 
     wgpu::SurfaceTexture surface_texture;
-    app_state->surface.GetCurrentTexture(&surface_texture);
+    tdg::engine::gpu.present_surface.GetCurrentTexture(&surface_texture);
 
     wgpu::TextureViewDescriptor texture_view_desc;
     texture_view_desc.format = surface_texture.texture.GetFormat();
@@ -388,7 +224,7 @@ void app_loop(void *_app_state)
     pass_desc.colorAttachmentCount = 1;
     pass_desc.colorAttachments = &color_attachment;
 
-    wgpu::CommandEncoder encoder = app_state->device.CreateCommandEncoder();
+    wgpu::CommandEncoder encoder = tdg::engine::gpu.device.CreateCommandEncoder();
 
     if (app_state->camera_changed) {
         encoder.CopyBufferToBuffer(
@@ -403,10 +239,10 @@ void app_loop(void *_app_state)
     render_pass_enc.End();
 
     wgpu::CommandBuffer commands = encoder.Finish();
-    app_state->queue.Submit(1, &commands);
+    tdg::engine::gpu.queue.Submit(1, &commands);
 
 #ifndef __EMSCRIPTEN__
-    app_state->surface.Present();
+    tdg::engine::gpu.present_surface.Present();
 #endif
     app_state->camera_changed = false;
 }

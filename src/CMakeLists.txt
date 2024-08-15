@@ -1,6 +1,9 @@
 embed_files(embedded_files ./triangle.wgsl)
 
-add_executable(wgpu_app main.cpp arcball_camera.cpp)
+file(GLOB_RECURSE TDGE_SRC_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.cpp)
+file(GLOB_RECURSE TDGE_HEADER_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.h)
+
+add_executable(wgpu_app ${TDGE_SRC_FILES} ${TDGE_HEADER_FILES} engine.h)
 
 set_target_properties(wgpu_app PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED
                                                           ON)
