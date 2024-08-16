@@ -42,4 +42,6 @@ wgpu::ShaderModule tdg::shader::compile_wgsl(const char *src)
             },
             nullptr);
     }
+
+    return shader_module;
 }

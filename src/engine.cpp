@@ -96,6 +96,15 @@ void tdg::engine::init() {
     tdg::engine::gpu.adapter = request_adapter(tdg::engine::gpu.instance, adapter_options);
 
     wgpu::DeviceDescriptor device_options = {};
+    device_options.deviceLostCallbackInfo.callback = [](WGPUDevice const * device, WGPUDeviceLostReason reason, char const * message, void * userdata)
+    {
+        if(reason == WGPUDeviceLostReason_FailedCreation)
+        {
+            std::cerr << "Failed to create WebGPU Instance \n";
+        }
+
+    };
+
     tdg::engine::gpu.device = request_device(tdg::engine::gpu.adapter, device_options);
 #endif
 

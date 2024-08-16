@@ -16,3 +16,4 @@ web/src/cpp/
 compile_commands.json
 web/dbg
 wasm-build/
+.idea/
