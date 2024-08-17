@@ -210,8 +210,7 @@ struct Parser {
         {
             // DO stuff
             head++;
-1``````+++`                                                                                                 1
-                next_token = tokens[head];
+            next_token = tokens[head];
         }
     }
 
@@ -237,7 +236,7 @@ struct Parser {
                 }
             }
 
-            // T`1ODO: generic user types
+            // TODO: generic user types
         }
 
     }
