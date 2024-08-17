@@ -35,5 +35,18 @@ public:
     static constexpr int starting_window_height = 720;
 
     static void init();
+
+    template<typename _Ty>
+    static wgpu::Buffer create_buffer(_Ty* data, size_t data_count, wgpu::BufferUsage usage)
+    {
+        wgpu::BufferDescriptor buffer_desc;
+        buffer_desc.mappedAtCreation = true;
+        buffer_desc.size = data_count * sizeof(_Ty);
+        buffer_desc.usage = usage;
+        wgpu::Buffer buf = tdg::engine::gpu.device.CreateBuffer(&buffer_desc);
+        std::memcpy(buf.GetMappedRange(), data, buffer_desc.size);
+        buf.Unmap();
+        return buf;
+    }
 };
 }

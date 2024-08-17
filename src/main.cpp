@@ -5,23 +5,19 @@
 #include "arcball_camera.h"
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
-
-
 #include "embedded_files.h"
 
 struct AppState {
-    wgpu::RenderPipeline render_pipeline;
+    wgpu::RenderPipeline    render_pipeline;
+    wgpu::Buffer            vertex_buf;
+    wgpu::Buffer            view_param_buf;
+    wgpu::BindGroup         bind_group;
+    ArcballCamera           camera;
+    glm::mat4               proj;
 
-    wgpu::Buffer vertex_buf;
-    wgpu::Buffer view_param_buf;
-    wgpu::BindGroup bind_group;
-
-    ArcballCamera camera;
-    glm::mat4 proj;
-
-    bool done = false;
-    bool camera_changed = true;
-    glm::vec2 prev_mouse = glm::vec2(-2.f);
+    bool                    done = false;
+    bool                    camera_changed = true;
+    glm::vec2               prev_mouse = glm::vec2(-2.f);
 };
 
 uint32_t win_width = 1280;
@@ -39,11 +35,7 @@ int main(int argc, const char **argv)
     AppState *app_state = new AppState;
 
     tdg::engine::init();
-
-
     wgpu::ShaderModule shader_module = tdg::shader::compile_wgsl(reinterpret_cast<const char *>(triangle_wgsl));
-
-
     // Upload vertex data
     const std::vector<float> vertex_data = {
         1,  -1, 0, 1,  // position
@@ -53,13 +45,7 @@ int main(int argc, const char **argv)
         0,  1,  0, 1,  // position
         0,  0,  1, 1,  // color
     };
-    wgpu::BufferDescriptor buffer_desc;
-    buffer_desc.mappedAtCreation = true;
-    buffer_desc.size = vertex_data.size() * sizeof(float);
-    buffer_desc.usage = wgpu::BufferUsage::Vertex;
-    app_state->vertex_buf = tdg::engine::gpu.device.CreateBuffer(&buffer_desc);
-    std::memcpy(app_state->vertex_buf.GetMappedRange(), vertex_data.data(), buffer_desc.size);
-    app_state->vertex_buf.Unmap();
+    app_state->vertex_buf = tdg::engine::create_buffer(vertex_data.data(), vertex_data.size(), wgpu::BufferUsage::Vertex);
 
     std::array<wgpu::VertexAttribute, 2> vertex_attributes;
     vertex_attributes[0].format = wgpu::VertexFormat::Float32x4;
