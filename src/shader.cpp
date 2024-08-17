@@ -69,12 +69,14 @@ static std::vector<std::string> g_relevant_token_types =
         "struct_declaration",
         "struct_member",
         "struct",
-        "ERROR"
+        "ERROR",
+        "{",
+        "}"
 };
 
 static constexpr bool g_enable_token_filtering = true;
 
-static const std::string g_non_generic_alias_regex_str = "alias ([a-zA-Z0-9]*) = ([a-zA-Z0-9]*);";
+static const std::string g_non_generic_alias_regex_str = "alias ([a-zA-Z0-9]*) = ([a-zA-Z0-9]*)";
 static const std::string g_generic_alias_regex_str = "alias ([a-zA-Z0-9]*) = ([a-zA-Z0-9]*)<([a-zA-Z0-9]*)>";
 
 static std::regex        g_non_generic_alias_regex(g_non_generic_alias_regex_str);
@@ -86,11 +88,6 @@ struct Parser {
         uint32_t type_size;
     };
 
-    struct alias {
-        std::string alias_name;
-        uint32_t type_index;
-    };
-
     struct generic_type
     {
         std::string generic_name;
@@ -100,19 +97,10 @@ struct Parser {
 
     std::unordered_map<std::string, type>           concrete_types;
     std::unordered_map<std::string, generic_type>   generic_types;
-    std::unordered_map<std::string, alias>          aliases;
 
     Parser()
     {
         fill_default_types();
-    }
-
-    bool        is_generic_type(std::string& candidate)
-    {
-        bool is_generic = generic_types.contains(candidate);
-
-        // also check generic regex
-        return is_generic;
     }
 
     std::vector<std::string>    get_alias_matches(std::string& candidate)
@@ -120,22 +108,18 @@ struct Parser {
         auto non_generic_matches    = tdg::utils::get_matches(candidate, g_non_generic_alias_regex);
         auto generic_matches        = tdg::utils::get_matches(candidate, g_generic_alias_regex);
 
-        if(!non_generic_matches.empty())
-        {
-            return non_generic_matches;
-        }
-
         if(!generic_matches.empty())
         {
             return generic_matches;
         }
 
+        if(!non_generic_matches.empty())
+        {
+            return non_generic_matches;
+        }
+
+
         return {};
-    }
-
-    std::string get_inner_generic_type(std::string& candidate)
-    {
-
     }
 
     void fill_default_types()
@@ -156,12 +140,80 @@ struct Parser {
 
     }
 
-    void handle_alias(std::vector<std::string> matches)
+    void handle_generic_alias(std::string alias_name, std::string generic_name, std::string concrete_name)
     {
-        std::cout << "making an alias boiiii\n";
+        if(generic_types.find(generic_name) == generic_types.end())
+        {
+            std::cerr << "Unknown generic type : " << generic_name << std::endl;
+            return;
+        }
 
+        auto& generic_type = generic_types[generic_name];
+
+        if(concrete_types.find(concrete_name) == concrete_types.end())
+        {
+            std::cerr << "Unknown concrete type : " << concrete_name << std::endl;
+            return;
+        }
+
+        auto& concrete_type = concrete_types[concrete_name];
+
+        type new_alias_type = {};
+        new_alias_type.type_name = alias_name;
+        new_alias_type.type_size = (concrete_type.type_size * generic_type.size_multi) + generic_type.size_offset;
+        concrete_types.emplace(alias_name, new_alias_type);
     }
 
+    void handle_concrete_alias(std::string alias_name, std::string concrete_name)
+    {
+        if (concrete_types.find(concrete_name) == concrete_types.end())
+        {
+            std::cerr << "Unknown concrete type : " << concrete_name << std::endl;
+            return;
+        }
+        type new_alias_type = {};
+        new_alias_type.type_name = alias_name;
+        new_alias_type.type_size = concrete_types[concrete_name].type_size;
+        concrete_types.emplace(alias_name, new_alias_type);
+    }
+
+    void handle_alias(std::vector<std::string> matches)
+    {
+        if (matches.size() == 4) {
+            // generic
+            auto alias_name = matches[1];
+            auto generic_name = matches[2];
+            auto concrete_name = matches[3];
+            handle_generic_alias(alias_name, generic_name, concrete_name);
+        } else if (matches.size() == 3) {
+            // non generic
+            auto alias_name = matches[1];
+            auto alias_type = matches[2];
+            handle_concrete_alias(alias_name, alias_type);
+        } else {
+            std::cerr << "Invalid format for alias detected" << std::endl;
+        }
+    }
+
+    void handle_new_usertype(std::vector<TokenMapping>& tokens, int& head)
+    {
+        head++;
+        if(tokens[head].token_type != "identifier")
+        {
+            std::cerr << "struct declared with no name" << std::endl;
+            return;
+        }
+        type new_usertype = {tokens[head].token_src, 0};
+
+        auto next_token = tokens[head];
+        while(next_token.token_type != "}")
+        {
+            // DO stuff
+            head++;
+1``````+++`                                                                                                 1
+                next_token = tokens[head];
+        }
+    }
 
     void parse(std::vector<TokenMapping> tokens)
     {
@@ -179,13 +231,13 @@ struct Parser {
 
             // Non generic user-types
             {
-
+                if(token.token_type == "struct")
+                {
+                    handle_new_usertype(tokens, head);
+                }
             }
-            // generic user types
-            {
 
-            }
-
+            // T`1ODO: generic user types
         }
 
     }
