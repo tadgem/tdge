@@ -1,4 +1,5 @@
 alias float4 = vec4<f32>;
+alias bool8 = bool;
 
 struct VertexInput {
     @location(0) position: float4,
