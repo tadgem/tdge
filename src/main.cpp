@@ -7,6 +7,8 @@
 #include <glm/glm.hpp>
 #include "embedded_files.h"
 
+
+
 struct AppState {
     wgpu::RenderPipeline    render_pipeline;
     wgpu::Buffer            vertex_buf;
@@ -35,7 +37,10 @@ int main(int argc, const char **argv)
     AppState *app_state = new AppState;
 
     tdg::engine::init();
-    wgpu::ShaderModule shader_module = tdg::shader::compile_wgsl(reinterpret_cast<const char *>(triangle_wgsl));
+    const char* wgsl_src = reinterpret_cast<const char *>(triangle_wgsl);
+    wgpu::ShaderModule              shader_module   = tdg::shader::compile_wgsl(wgsl_src);
+    tdg::shader::reflection_data    reflect_data    = tdg::shader::reflect_wgsl(wgsl_src);
+
     // Upload vertex data
     const std::vector<float> vertex_data = {
         1,  -1, 0, 1,  // position

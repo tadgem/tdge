@@ -17,7 +17,14 @@ if(NOT EMSCRIPTEN)
 endif()
 
 include(cmake/FetchSDL2WebGPU.cmake)
-
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
+
+add_subdirectory(third-party/tree-sitter-cmake)
+
+set(TDGE_TREE_SITTER_INCLUDES
+        ${CMAKE_CURRENT_BINARY_DIR}/third-party/tree-sitter-cmake/tree-sitter/lib/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/third-party/tree-sitter-cmake/include/
+        ${CMAKE_CURRENT_SOURCE_DIR}/third-party/tree-sitter-cmake/tree-sitter-wgsl/
+        CACHE INTERNAL "")
 
 add_subdirectory(src)

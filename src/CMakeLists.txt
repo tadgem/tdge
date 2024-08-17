@@ -8,7 +8,10 @@ add_executable(wgpu_app ${TDGE_SRC_FILES} ${TDGE_HEADER_FILES} engine.h)
 set_target_properties(wgpu_app PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED
                                                           ON)
 
-target_link_libraries(wgpu_app PRIVATE glm embedded_files sdl2webgpu)
+
+target_link_libraries(wgpu_app PRIVATE glm embedded_files sdl2webgpu Tree-Sitter::Tree-Sitter Tree-Sitter::Tree-Sitter-WGSL)
+
+target_include_directories(wgpu_app PRIVATE ${TDGE_TREE_SITTER_INCLUDES})
 
 if(EMSCRIPTEN)
   target_compile_options(wgpu_app PRIVATE --use-port=sdl2)
