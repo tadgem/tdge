@@ -5,6 +5,8 @@ if(NOT WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 endif()
 
+set(CMAKE_FOLDER dependencies)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(ExternalProject)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/EmbedFile.cmake)
@@ -27,4 +29,5 @@ set(TDGE_TREE_SITTER_INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}/third-party/tree-sitter-cmake/tree-sitter-wgsl/
         CACHE INTERNAL "")
 
+unset(CMAKE_FOLDER)
 add_subdirectory(tdge)

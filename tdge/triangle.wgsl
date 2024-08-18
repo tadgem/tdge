@@ -1,4 +1,5 @@
 alias float4 = vec4<f32>;
+alias mat4 = mat4x4<f32>;
 alias bool8 = bool;
 
 struct VertexInput {
@@ -13,6 +14,11 @@ struct VertexOutput {
 
 struct ViewParams {
     view_proj: mat4x4<f32>,
+};
+
+struct ViewParamsAliased
+{
+    view_proj: mat4,
 };
 
 @group(0) @binding(0)

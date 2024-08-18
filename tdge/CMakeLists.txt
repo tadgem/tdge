@@ -3,6 +3,19 @@ embed_files(embedded_files ./triangle.wgsl)
 file(GLOB_RECURSE TDGE_SRC_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.cpp)
 file(GLOB_RECURSE TDGE_HEADER_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.h)
 
+# VS Filters
+foreach(header IN LISTS TDGE_HEADER_FILES)
+    get_filename_component(source_path "${header}" PATH)
+    string(REPLACE "/" "\\" source_path_msvc "${source_path}")
+    source_group("${source_path_msvc}" FILES "${header}")
+endforeach()
+
+foreach(source IN LISTS TDGE_SRC_FILES)
+    get_filename_component(source_path "${source}" PATH)
+    string(REPLACE "/" "\\" source_path_msvc "${source_path}")
+    source_group("${source_path_msvc}" FILES "${source}")
+endforeach()
+
 add_executable(wgpu_app ${TDGE_SRC_FILES} ${TDGE_HEADER_FILES} engine.h)
 
 set_target_properties(wgpu_app PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED

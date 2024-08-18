@@ -17,6 +17,7 @@ static std::vector<std::string> g_relevant_token_types =
     {
         "identifier",
         "attribute",
+        "uniform",
         "parameter",
         "int_literal",
         "type_declaration",
@@ -49,8 +50,33 @@ struct Parser {
         uint32_t    size_offset;
     };
 
+    struct struct_member {
+        std::string name;
+        std::string type;
+        std::string attribute_name;
+        std::string attribute_value;
+        uint32_t    member_size;
+    };
+
+    struct user_type {
+        std::string                 type_name;
+        std::vector<struct_member>  members;
+        uint32_t                    type_size;
+    };
+
+    struct uniform
+    {
+        uint16_t    set;
+        uint16_t    binding;
+        std::string name;
+        std::string type;
+    };
+
     std::unordered_map<std::string, type>           concrete_types;
     std::unordered_map<std::string, generic_type>   generic_types;
+    std::unordered_map<std::string, user_type>      user_types;
+    std::unordered_map<std::string, uniform>        uniforms;
+
 
     Parser()
     {
@@ -88,9 +114,9 @@ struct Parser {
         generic_types.emplace("vec3", generic_type { "vec3", 3, 0});
         generic_types.emplace("vec4", generic_type { "vec4", 4, 0});
 
-        generic_types.emplace("mat2", generic_type { "mat2", 4, 0});
-        generic_types.emplace("mat3", generic_type { "mat3", 9, 0});
-        generic_types.emplace("mat4", generic_type { "mat4", 16, 0});
+        generic_types.emplace("mat2x2", generic_type { "mat2x2", 4, 0});
+        generic_types.emplace("mat3x3", generic_type { "mat3x3", 9, 0});
+        generic_types.emplace("mat4x4", generic_type { "mat4x4", 16, 0});
 
     }
 
@@ -158,24 +184,62 @@ struct Parser {
             return;
         }
         type new_usertype = {tokens[head].token_src, 0};
+        std::vector<struct_member> members{};
 
         auto next_token = tokens[head];
         // while we have members to reflect in this struct
+        // TODO: This isnt catching the struct end
         while(next_token.token_type != "}")
         {
             // DO stuff
             if(next_token.token_type == "struct_member")
             {
+                auto next_token_candidate = tokens[head + 7];
+                // members with attributes will have        7 entries before next item in tree,
+                // next item may be a '}' indicating the end of the struct, or a new struct member
+                if (next_token_candidate.token_type == "struct_member" ||
+                    next_token_candidate.token_type == "}")
+                {
+                    std::string member_attribute_name = tokens[head + 2].token_src;
+                    std::string member_attribute_value = tokens[head + 3].token_src;
+                    std::string member_name = tokens[head + 4].token_src;
+                    std::string member_type = tokens[head + 5].token_src;
 
+                    members.push_back({member_name, member_type, member_attribute_name, member_attribute_value, 0});
+                    // we have a struct member with attributes;
+                    head++;
+                    continue;
+                }
+                // members without attributes should have   3 entries before next item in tree,
+                next_token_candidate = tokens[head + 4];
+                if (next_token_candidate.token_type == "struct_member" ||
+                    next_token_candidate.token_type == "}") {
+                    std::string member_name = tokens[head + 1].token_src;
+                    std::string raw_type = tokens[head + 2].token_src;
+                    members.push_back({member_name, raw_type, "", "", 0});
+                    // we have a struct member with no attributes;
+                }
             }
 
             head++;
             next_token = tokens[head];
         }
+
+        user_types.emplace(new_usertype.type_name, user_type{new_usertype.type_name, members, 0});
+    }
+
+    void handle_new_uniform(std::vector<TokenMapping>& tokens, int& head)
+    {
+        std::string uniform_name = tokens[head + 1].token_src;
+        std::string uniform_type = tokens[head + 2].token_src;
+        uint16_t uniform_set = std::stoi(tokens[head - 4].token_src);
+        uint16_t uniform_binding = std::stoi(tokens[head - 1].token_src);
+        uniforms.emplace(uniform_name, uniform {uniform_set, uniform_binding, uniform_name, uniform_type});
     }
 
     void parse(std::vector<TokenMapping> tokens)
     {
+
         for (int head = 0; head < tokens.size(); head++)
         {
             auto&   token = tokens[head];
@@ -196,10 +260,20 @@ struct Parser {
                 }
             }
 
+            // uniforms
+            {
+                if (token.token_type == "uniform")
+                {
+                    handle_new_uniform(tokens, head);
+                }
+            }
+
             // TODO: generic user types
         }
 
+        std::cout << "Fin" << std::endl;
     }
+
 
 };
 
