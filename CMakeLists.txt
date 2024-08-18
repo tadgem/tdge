@@ -27,4 +27,4 @@ set(TDGE_TREE_SITTER_INCLUDES
         ${CMAKE_CURRENT_SOURCE_DIR}/third-party/tree-sitter-cmake/tree-sitter-wgsl/
         CACHE INTERNAL "")
 
-add_subdirectory(src)
+add_subdirectory(tdge)
