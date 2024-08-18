@@ -102,24 +102,6 @@ struct Parser {
         return {};
     }
 
-    void fill_default_types()
-    {
-        concrete_types.emplace("i32", type{"i32", 4});
-        concrete_types.emplace("u32", type{"u32", 4});
-        concrete_types.emplace("f32", type{"f32", 4});
-        concrete_types.emplace("f16", type{"f16", 2});
-        concrete_types.emplace("bool", type{"bool", 1});
-
-        generic_types.emplace("vec2", generic_type { "vec2", 2, 0});
-        generic_types.emplace("vec3", generic_type { "vec3", 3, 0});
-        generic_types.emplace("vec4", generic_type { "vec4", 4, 0});
-
-        generic_types.emplace("mat2x2", generic_type { "mat2x2", 4, 0});
-        generic_types.emplace("mat3x3", generic_type { "mat3x3", 9, 0});
-        generic_types.emplace("mat4x4", generic_type { "mat4x4", 16, 0});
-
-    }
-
     void handle_generic_alias(std::string alias_name, std::string generic_name, std::string concrete_name)
     {
         if(generic_types.find(generic_name) == generic_types.end())
@@ -142,6 +124,34 @@ struct Parser {
         new_alias_type.type_name = alias_name;
         new_alias_type.type_size = (concrete_type.type_size * generic_type.size_multi) + generic_type.size_offset;
         concrete_types.emplace(alias_name, new_alias_type);
+    }
+
+    void fill_default_types()
+    {
+        concrete_types.emplace("i32", type{"i32", 4});
+        concrete_types.emplace("u32", type{"u32", 4});
+        concrete_types.emplace("f32", type{"f32", 4});
+        concrete_types.emplace("f16", type{"f16", 2});
+        concrete_types.emplace("bool", type{"bool", 1});
+
+        generic_types.emplace("vec2", generic_type{"vec2", 2, 0});
+        generic_types.emplace("vec3", generic_type{"vec3", 3, 0});
+        generic_types.emplace("vec4", generic_type{"vec4", 4, 0});
+
+        generic_types.emplace("mat2x2", generic_type{"mat2x2", 4, 0});
+        generic_types.emplace("mat3x3", generic_type{"mat3x3", 9, 0});
+        generic_types.emplace("mat4x4", generic_type{"mat4x4", 16, 0});
+
+        auto base_concrete_types = concrete_types;
+
+        for (auto &[generic_name, generic_type] : generic_types) {
+            for (auto &[concrete_name, concrete_type] : base_concrete_types) {
+                std::string alias_name = generic_name  + "<" +
+                                         concrete_name + ">";
+
+                handle_generic_alias(alias_name, generic_name, concrete_name);
+            }
+        }
     }
 
     void handle_concrete_alias(std::string alias_name, std::string concrete_name)
@@ -175,6 +185,21 @@ struct Parser {
         }
     }
 
+    uint32_t get_type_size(std::string name)
+    {
+        if (user_types.find(name) != user_types.end())
+        {
+            return user_types[name].type_size;
+        }
+
+        if (concrete_types.find(name) != concrete_types.end())
+        {
+            return concrete_types[name].type_size;
+        }
+
+        return UINT32_MAX;
+    }
+
     void handle_new_usertype(std::vector<TokenMapping>& tokens, int& head)
     {
         head++;
@@ -204,8 +229,9 @@ struct Parser {
                     std::string member_attribute_value = tokens[head + 3].token_src;
                     std::string member_name = tokens[head + 4].token_src;
                     std::string member_type = tokens[head + 5].token_src;
+                    uint32_t member_size = get_type_size(member_type);
 
-                    members.push_back({member_name, member_type, member_attribute_name, member_attribute_value, 0});
+                    members.push_back({member_name, member_type, member_attribute_name, member_attribute_value, member_size});
                     // we have a struct member with attributes;
                     head++;
                     continue;
@@ -216,7 +242,8 @@ struct Parser {
                     next_token_candidate.token_type == "}") {
                     std::string member_name = tokens[head + 1].token_src;
                     std::string raw_type = tokens[head + 2].token_src;
-                    members.push_back({member_name, raw_type, "", "", 0});
+                    uint32_t member_size = get_type_size(raw_type);
+                    members.push_back({member_name, raw_type, "", "", member_size});
                     // we have a struct member with no attributes;
                 }
             }
@@ -225,7 +252,12 @@ struct Parser {
             next_token = tokens[head];
         }
 
-        user_types.emplace(new_usertype.type_name, user_type{new_usertype.type_name, members, 0});
+        uint32_t type_size = 0;
+        for (auto &member : members) {
+            type_size += member.member_size;
+        }
+
+        user_types.emplace(new_usertype.type_name, user_type{new_usertype.type_name, members, type_size});
     }
 
     void handle_new_uniform(std::vector<TokenMapping>& tokens, int& head)
@@ -239,7 +271,6 @@ struct Parser {
 
     void parse(std::vector<TokenMapping> tokens)
     {
-
         for (int head = 0; head < tokens.size(); head++)
         {
             auto&   token = tokens[head];
@@ -267,14 +298,11 @@ struct Parser {
                     handle_new_uniform(tokens, head);
                 }
             }
-
+            // TODO: Samplers
+            
             // TODO: generic user types
         }
-
-        std::cout << "Fin" << std::endl;
     }
-
-
 };
 
 std::string get_source_from_node(TSNode node, std::string& original_source)
