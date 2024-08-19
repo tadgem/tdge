@@ -298,9 +298,6 @@ struct Parser {
                     handle_new_uniform(tokens, head);
                 }
             }
-            // TODO: Samplers
-            
-            // TODO: generic user types
         }
     }
 };

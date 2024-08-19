@@ -18,8 +18,7 @@ endforeach()
 
 add_executable(wgpu_app ${TDGE_SRC_FILES} ${TDGE_HEADER_FILES} engine.h)
 
-set_target_properties(wgpu_app PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED
-                                                          ON)
+set_target_properties(wgpu_app PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
 
 
 target_link_libraries(wgpu_app PRIVATE glm embedded_files sdl2webgpu Tree-Sitter::Tree-Sitter Tree-Sitter::Tree-Sitter-WGSL)
