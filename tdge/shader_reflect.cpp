@@ -59,6 +59,7 @@ struct Parser {
         std::string attribute_name;
         std::string attribute_value;
         uint32_t    member_size;
+        uint32_t    member_offset;
     };
 
     struct user_type {
@@ -155,6 +156,10 @@ struct Parser {
         concrete_types.emplace("f32", type{"f32", 4});
         concrete_types.emplace("f16", type{"f16", 2});
         concrete_types.emplace("bool", type{"bool", 1});
+        concrete_types.emplace("vec2f", type{"vec2f", 8});
+        concrete_types.emplace("vec3f", type{"vec3f", 12});
+        concrete_types.emplace("vec4f", type{"vec4f", 16});
+
 
         generic_types.emplace("vec2", generic_type{"vec2", 2, 0});
         generic_types.emplace("vec3", generic_type{"vec3", 3, 0});
@@ -239,6 +244,7 @@ struct Parser {
         auto next_token = tokens[head];
         // while we have members to reflect in this struct
         // TODO: This isnt catching the struct end
+        uint32_t offset_counter = 0;
         while(next_token.token_type != "}")
         {
             // DO stuff
@@ -255,8 +261,10 @@ struct Parser {
                     std::string member_name = tokens[head + 4].token_src;
                     std::string member_type = tokens[head + 5].token_src;
                     uint32_t member_size = get_type_size(member_type);
+                    uint32_t member_offset = offset_counter;
+                    offset_counter += member_size;
 
-                    members.push_back({member_name, member_type, member_attribute_name, member_attribute_value, member_size});
+                    members.push_back({member_name, member_type, member_attribute_name, member_attribute_value, member_size, member_offset});
                     // we have a struct member with attributes;
                     head++;
                     continue;
@@ -268,7 +276,10 @@ struct Parser {
                     std::string member_name = tokens[head + 1].token_src;
                     std::string raw_type = tokens[head + 2].token_src;
                     uint32_t member_size = get_type_size(raw_type);
-                    members.push_back({member_name, raw_type, "", "", member_size});
+                    uint32_t member_offset = offset_counter;
+                    offset_counter += member_size;
+
+                    members.push_back({member_name, raw_type, "", "", member_size, member_offset});
                     // we have a struct member with no attributes;
                 }
             }
