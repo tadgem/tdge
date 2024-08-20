@@ -3,6 +3,7 @@
 #include "engine.h"
 #include "shader.h"
 #include "arcball_camera.h"
+#include "utils.h"
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include "embedded_files.h"
@@ -37,10 +38,14 @@ int main(int argc, const char **argv)
     AppState *app_state = new AppState;
 
     tdg::engine::init();
-    const char* wgsl_src = reinterpret_cast<const char *>(triangle_wgsl);
-    wgpu::ShaderModule              shader_module   = tdg::shader::compile_wgsl(wgsl_src);
-    tdg::shader::reflection_data    reflect_data    = tdg::shader::reflect_wgsl(wgsl_src);
 
+    std::string texture_shader = tdg::utils::load_string_from_path("shaders/texture.wgsl");
+    const char* wgsl_src = reinterpret_cast<const char *>(triangle_wgsl);
+
+    wgpu::ShaderModule              shader_module   = tdg::shader::compile_wgsl(wgsl_src);
+    // tdg::shader::reflection_data    reflect_data    = tdg::shader::reflect_wgsl(wgsl_src);
+    tdg::shader::reflection_data    tex_reflect     = tdg::shader::reflect_wgsl(texture_shader.c_str());
+    
     // Upload vertex data
     const std::vector<float> vertex_data = {
         1,  -1, 0, 1,  // position

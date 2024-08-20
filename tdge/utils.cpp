@@ -1,4 +1,7 @@
 #include "utils.h"
+#include <fstream>
+#include <sstream>
+
 std::vector<std::string> tdg::utils::get_matches(std::string &input, std::regex &exp)
 {
     std::smatch matches;
@@ -11,4 +14,12 @@ std::vector<std::string> tdg::utils::get_matches(std::string &input, std::regex 
         return match_strings;
     }
     return {};
+}
+
+std::string tdg::utils::load_string_from_path(const std::string &path)
+{
+    std::ifstream input(path);
+    std::stringstream str_stream;
+    str_stream << input.rdbuf();
+    return str_stream.str();
 }

@@ -1,0 +1,550 @@
+Type : source_file, Src: struct Uniforms {
+  modelViewProjectionMatrix : mat4x4f,
+}
+
+struct VertexInput
+{
+    @location(0) position : vec4f,
+    @location(1) uv : vec2f
+}
+
+struct VertexOutput {
+  @builtin(position) Position : vec4f,
+  @location(0) fragUV : vec2f,
+  @location(1) fragPosition: vec4f,
+}
+
+@group(0) @binding(0) var<uniform> uniforms : Uniforms;
+
+@group(1) @binding(0) var mySampler: sampler;
+@group(1) @binding(1) var myTexture: texture_2d<f32>;
+
+@vertex
+fn main(input : VertexInput) -> VertexOutput {
+  var output : VertexOutput;
+  output.Position = uniforms.modelViewProjectionMatrix * position;
+  output.fragUV = uv;
+  output.fragPosition = 0.5 * (position + vec4(1.0, 1.0, 1.0, 1.0));
+  return output;
+}
+
+@fragment
+fn main(
+@location(0) fragUV: vec2f,
+  @location(1) fragPosition: vec4f
+) -> @location(0) vec4f {
+  return textureSample(myTexture, mySampler, fragUV) * fragPosition;
+}
+Type : struct_declaration, Src: struct Uniforms {
+  modelViewProjectionMatrix : mat4x4f,
+}
+Type : struct, Src: struct
+Type : identifier, Src: Uniforms
+Type : {, Src: {
+Type : struct_member, Src: modelViewProjectionMatrix : mat4x4f
+Type : variable_identifier_declaration, Src: modelViewProjectionMatrix : mat4x4f
+Type : identifier, Src: modelViewProjectionMatrix
+Type : :, Src: :
+Type : type_declaration, Src: mat4x4f
+Type : identifier, Src: mat4x4f
+Type : ,, Src: ,
+Type : }, Src: }
+Type : struct_declaration, Src: struct VertexInput
+{
+    @location(0) position : vec4f,
+    @location(1) uv : vec2f
+}
+Type : struct, Src: struct
+Type : identifier, Src: VertexInput
+Type : {, Src: {
+Type : struct_member, Src: @location(0) position : vec4f
+Type : attribute, Src: @location(0)
+Type : @, Src: @
+Type : identifier, Src: location
+Type : (, Src: (
+Type : int_literal, Src: 0
+Type : ), Src: )
+Type : variable_identifier_declaration, Src: position : vec4f
+Type : identifier, Src: position
+Type : :, Src: :
+Type : type_declaration, Src: vec4f
+Type : identifier, Src: vec4f
+Type : ,, Src: ,
+Type : struct_member, Src: @location(1) uv : vec2f
+Type : attribute, Src: @location(1)
+Type : @, Src: @
+Type : identifier, Src: location
+Type : (, Src: (
+Type : int_literal, Src: 1
+Type : ), Src: )
+Type : variable_identifier_declaration, Src: uv : vec2f
+Type : identifier, Src: uv
+Type : :, Src: :
+Type : type_declaration, Src: vec2f
+Type : identifier, Src: vec2f
+Type : }, Src: }
+Type : struct_declaration, Src: struct VertexOutput {
+  @builtin(position) Position : vec4f,
+  @location(0) fragUV : vec2f,
+  @location(1) fragPosition: vec4f,
+}
+Type : struct, Src: struct
+Type : identifier, Src: VertexOutput
+Type : {, Src: {
+Type : struct_member, Src: @builtin(position) Position : vec4f
+Type : attribute, Src: @builtin(position)
+Type : @, Src: @
+Type : identifier, Src: builtin
+Type : (, Src: (
+Type : identifier, Src: position
+Type : ), Src: )
+Type : variable_identifier_declaration, Src: Position : vec4f
+Type : identifier, Src: Position
+Type : :, Src: :
+Type : type_declaration, Src: vec4f
+Type : identifier, Src: vec4f
+Type : ,, Src: ,
+Type : struct_member, Src: @location(0) fragUV : vec2f
+Type : attribute, Src: @location(0)
+Type : @, Src: @
+Type : identifier, Src: location
+Type : (, Src: (
+Type : int_literal, Src: 0
+Type : ), Src: )
+Type : variable_identifier_declaration, Src: fragUV : vec2f
+Type : identifier, Src: fragUV
+Type : :, Src: :
+Type : type_declaration, Src: vec2f
+Type : identifier, Src: vec2f
+Type : ,, Src: ,
+Type : struct_member, Src: @location(1) fragPosition: vec4f
+Type : attribute, Src: @location(1)
+Type : @, Src: @
+Type : identifier, Src: location
+Type : (, Src: (
+Type : int_literal, Src: 1
+Type : ), Src: )
+Type : variable_identifier_declaration, Src: fragPosition: vec4f
+Type : identifier, Src: fragPosition
+Type : :, Src: :
+Type : type_declaration, Src: vec4f
+Type : identifier, Src: vec4f
+Type : ,, Src: ,
+Type : }, Src: }
+Type : global_variable_declaration, Src: @group(0) @binding(0) var<uniform> uniforms : Uniforms
+Type : attribute, Src: @group(0)
+Type : @, Src: @
+Type : identifier, Src: group
+Type : (, Src: (
+Type : int_literal, Src: 0
+Type : ), Src: )
+Type : attribute, Src: @binding(0)
+Type : @, Src: @
+Type : identifier, Src: binding
+Type : (, Src: (
+Type : int_literal, Src: 0
+Type : ), Src: )
+Type : variable_declaration, Src: var<uniform> uniforms : Uniforms
+Type : var, Src: var
+Type : variable_qualifier, Src: <uniform>
+Type : <, Src: <
+Type : address_space, Src: uniform
+Type : uniform, Src: uniform
+Type : >, Src: >
+Type : variable_identifier_declaration, Src: uniforms : Uniforms
+Type : identifier, Src: uniforms
+Type : :, Src: :
+Type : type_declaration, Src: Uniforms
+Type : identifier, Src: Uniforms
+Type : ;, Src: ;
+Type : global_variable_declaration, Src: @group(1) @binding(0) var mySampler: sampler
+Type : attribute, Src: @group(1)
+Type : @, Src: @
+Type : identifier, Src: group
+Type : (, Src: (
+Type : int_literal, Src: 1
+Type : ), Src: )
+Type : attribute, Src: @binding(0)
+Type : @, Src: @
+Type : identifier, Src: binding
+Type : (, Src: (
+Type : int_literal, Src: 0
+Type : ), Src: )
+Type : variable_declaration, Src: var mySampler: sampler
+Type : var, Src: var
+Type : variable_identifier_declaration, Src: mySampler: sampler
+Type : identifier, Src: mySampler
+Type : :, Src: :
+Type : type_declaration, Src: sampler
+Type : sampler, Src: sampler
+Type : ;, Src: ;
+Type : global_variable_declaration, Src: @group(1) @binding(1) var myTexture: texture_2d<f32>
+Type : attribute, Src: @group(1)
+Type : @, Src: @
+Type : identifier, Src: group
+Type : (, Src: (
+Type : int_literal, Src: 1
+Type : ), Src: )
+Type : attribute, Src: @binding(1)
+Type : @, Src: @
+Type : identifier, Src: binding
+Type : (, Src: (
+Type : int_literal, Src: 1
+Type : ), Src: )
+Type : variable_declaration, Src: var myTexture: texture_2d<f32>
+Type : var, Src: var
+Type : variable_identifier_declaration, Src: myTexture: texture_2d<f32>
+Type : identifier, Src: myTexture
+Type : :, Src: :
+Type : type_declaration, Src: texture_2d<f32>
+Type : texture_2d, Src: texture_2d
+Type : <, Src: <
+Type : f32, Src: f32
+Type : >, Src: >
+Type : ;, Src: ;
+Type : function_declaration, Src: @vertex
+fn main(input : VertexInput) -> VertexOutput {
+  var output : VertexOutput;
+  output.Position = uniforms.modelViewProjectionMatrix * position;
+  output.fragUV = uv;
+  output.fragPosition = 0.5 * (position + vec4(1.0, 1.0, 1.0, 1.0));
+  return output;
+}
+Type : attribute, Src: @vertex
+Type : @, Src: @
+Type : identifier, Src: vertex
+Type : fn, Src: fn
+Type : identifier, Src: main
+Type : (, Src: (
+Type : parameter_list, Src: input : VertexInput
+Type : parameter, Src: input : VertexInput
+Type : variable_identifier_declaration, Src: input : VertexInput
+Type : identifier, Src: input
+Type : :, Src: :
+Type : type_declaration, Src: VertexInput
+Type : identifier, Src: VertexInput
+Type : ), Src: )
+Type : function_return_type_declaration, Src: -> VertexOutput
+Type : ->, Src: ->
+Type : type_declaration, Src: VertexOutput
+Type : identifier, Src: VertexOutput
+Type : compound_statement, Src: {
+  var output : VertexOutput;
+  output.Position = uniforms.modelViewProjectionMatrix * position;
+  output.fragUV = uv;
+  output.fragPosition = 0.5 * (position + vec4(1.0, 1.0, 1.0, 1.0));
+  return output;
+}
+Type : {, Src: {
+Type : variable_statement, Src: var output : VertexOutput
+Type : variable_declaration, Src: var output : VertexOutput
+Type : var, Src: var
+Type : variable_identifier_declaration, Src: output : VertexOutput
+Type : identifier, Src: output
+Type : :, Src: :
+Type : type_declaration, Src: VertexOutput
+Type : identifier, Src: VertexOutput
+Type : ;, Src: ;
+Type : assignment_statement, Src: output.Position = uniforms.modelViewProjectionMatrix * position
+Type : lhs_expression, Src: output.Position
+Type : identifier, Src: output
+Type : postfix_expression, Src: .Position
+Type : ., Src: .
+Type : identifier, Src: Position
+Type : =, Src: =
+Type : binary_expression, Src: uniforms.modelViewProjectionMatrix * position
+Type : composite_value_decomposition_expression, Src: uniforms.modelViewProjectionMatrix
+Type : identifier, Src: uniforms
+Type : ., Src: .
+Type : identifier, Src: modelViewProjectionMatrix
+Type : *, Src: *
+Type : identifier, Src: position
+Type : ;, Src: ;
+Type : assignment_statement, Src: output.fragUV = uv
+Type : lhs_expression, Src: output.fragUV
+Type : identifier, Src: output
+Type : postfix_expression, Src: .fragUV
+Type : ., Src: .
+Type : identifier, Src: fragUV
+Type : =, Src: =
+Type : identifier, Src: uv
+Type : ;, Src: ;
+Type : assignment_statement, Src: output.fragPosition = 0.5 * (position + vec4(1.0, 1.0, 1.0, 1.0))
+Type : lhs_expression, Src: output.fragPosition
+Type : identifier, Src: output
+Type : postfix_expression, Src: .fragPosition
+Type : ., Src: .
+Type : identifier, Src: fragPosition
+Type : =, Src: =
+Type : binary_expression, Src: 0.5 * (position + vec4(1.0, 1.0, 1.0, 1.0))
+Type : const_literal, Src: 0.5
+Type : float_literal, Src: 0.5
+Type : *, Src: *
+Type : parenthesized_expression, Src: (position + vec4(1.0, 1.0, 1.0, 1.0))
+Type : (, Src: (
+Type : binary_expression, Src: position + vec4(1.0, 1.0, 1.0, 1.0)
+Type : identifier, Src: position
+Type : +, Src: +
+Type : type_constructor_or_function_call_expression, Src: vec4(1.0, 1.0, 1.0, 1.0)
+Type : vec4, Src: vec4
+Type : argument_list_expression, Src: (1.0, 1.0, 1.0, 1.0)
+Type : (, Src: (
+Type : const_literal, Src: 1.0
+Type : float_literal, Src: 1.0
+Type : ,, Src: ,
+Type : const_literal, Src: 1.0
+Type : float_literal, Src: 1.0
+Type : ,, Src: ,
+Type : const_literal, Src: 1.0
+Type : float_literal, Src: 1.0
+Type : ,, Src: ,
+Type : const_literal, Src: 1.0
+Type : float_literal, Src: 1.0
+Type : ), Src: )
+Type : ), Src: )
+Type : ;, Src: ;
+Type : return_statement, Src: return output
+Type : return, Src: return
+Type : identifier, Src: output
+Type : ;, Src: ;
+Type : }, Src: }
+Type : function_declaration, Src: @fragment
+fn main(
+@location(0) fragUV: vec2f,
+  @location(1) fragPosition: vec4f
+) -> @location(0) vec4f {
+  return textureSample(myTexture, mySampler, fragUV) * fragPosition;
+}
+Type : attribute, Src: @fragment
+Type : @, Src: @
+Type : identifier, Src: fragment
+Type : fn, Src: fn
+Type : identifier, Src: main
+Type : (, Src: (
+Type : parameter_list, Src: @location(0) fragUV: vec2f,
+  @location(1) fragPosition: vec4f
+Type : parameter, Src: @location(0) fragUV: vec2f
+Type : attribute, Src: @location(0)
+Type : @, Src: @
+Type : identifier, Src: location
+Type : (, Src: (
+Type : int_literal, Src: 0
+Type : ), Src: )
+Type : variable_identifier_declaration, Src: fragUV: vec2f
+Type : identifier, Src: fragUV
+Type : :, Src: :
+Type : type_declaration, Src: vec2f
+Type : identifier, Src: vec2f
+Type : ,, Src: ,
+Type : parameter, Src: @location(1) fragPosition: vec4f
+Type : attribute, Src: @location(1)
+Type : @, Src: @
+Type : identifier, Src: location
+Type : (, Src: (
+Type : int_literal, Src: 1
+Type : ), Src: )
+Type : variable_identifier_declaration, Src: fragPosition: vec4f
+Type : identifier, Src: fragPosition
+Type : :, Src: :
+Type : type_declaration, Src: vec4f
+Type : identifier, Src: vec4f
+Type : ), Src: )
+Type : function_return_type_declaration, Src: -> @location(0) vec4f
+Type : ->, Src: ->
+Type : attribute, Src: @location(0)
+Type : @, Src: @
+Type : identifier, Src: location
+Type : (, Src: (
+Type : int_literal, Src: 0
+Type : ), Src: )
+Type : type_declaration, Src: vec4f
+Type : identifier, Src: vec4f
+Type : compound_statement, Src: {
+  return textureSample(myTexture, mySampler, fragUV) * fragPosition;
+}
+Type : {, Src: {
+Type : return_statement, Src: return textureSample(myTexture, mySampler, fragUV) * fragPosition
+Type : return, Src: return
+Type : binary_expression, Src: textureSample(myTexture, mySampler, fragUV) * fragPosition
+Type : type_constructor_or_function_call_expression, Src: textureSample(myTexture, mySampler, fragUV)
+Type : type_declaration, Src: textureSample
+Type : identifier, Src: textureSample
+Type : argument_list_expression, Src: (myTexture, mySampler, fragUV)
+Type : (, Src: (
+Type : identifier, Src: myTexture
+Type : ,, Src: ,
+Type : identifier, Src: mySampler
+Type : ,, Src: ,
+Type : identifier, Src: fragUV
+Type : ), Src: )
+Type : *, Src: *
+Type : identifier, Src: fragPosition
+Type : ;, Src: ;
+Type : }, Src: }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// filtered
+Type : struct_declaration, Src: struct Uniforms {
+  modelViewProjectionMatrix : mat4x4f,
+}
+Type : struct, Src: struct
+Type : identifier, Src: Uniforms
+Type : {, Src: {
+Type : struct_member, Src: modelViewProjectionMatrix : mat4x4f
+Type : identifier, Src: modelViewProjectionMatrix
+Type : type_declaration, Src: mat4x4f
+Type : identifier, Src: mat4x4f
+Type : }, Src: }
+Type : struct_declaration, Src: struct VertexInput
+{
+    @location(0) position : vec4f,
+    @location(1) uv : vec2f
+}
+Type : struct, Src: struct
+Type : identifier, Src: VertexInput
+Type : {, Src: {
+Type : struct_member, Src: @location(0) position : vec4f
+Type : attribute, Src: @location(0)
+Type : identifier, Src: location
+Type : int_literal, Src: 0
+Type : identifier, Src: position
+Type : type_declaration, Src: vec4f
+Type : identifier, Src: vec4f
+Type : struct_member, Src: @location(1) uv : vec2f
+Type : attribute, Src: @location(1)
+Type : identifier, Src: location
+Type : int_literal, Src: 1
+Type : identifier, Src: uv
+Type : type_declaration, Src: vec2f
+Type : identifier, Src: vec2f
+Type : }, Src: }
+Type : struct_declaration, Src: struct VertexOutput {
+  @builtin(position) Position : vec4f,
+  @location(0) fragUV : vec2f,
+  @location(1) fragPosition: vec4f,
+}
+Type : struct, Src: struct
+Type : identifier, Src: VertexOutput
+Type : {, Src: {
+Type : struct_member, Src: @builtin(position) Position : vec4f
+Type : attribute, Src: @builtin(position)
+Type : identifier, Src: builtin
+Type : identifier, Src: position
+Type : identifier, Src: Position
+Type : type_declaration, Src: vec4f
+Type : identifier, Src: vec4f
+Type : struct_member, Src: @location(0) fragUV : vec2f
+Type : attribute, Src: @location(0)
+Type : identifier, Src: location
+Type : int_literal, Src: 0
+Type : identifier, Src: fragUV
+Type : type_declaration, Src: vec2f
+Type : identifier, Src: vec2f
+Type : struct_member, Src: @location(1) fragPosition: vec4f
+Type : attribute, Src: @location(1)
+Type : identifier, Src: location
+Type : int_literal, Src: 1
+Type : identifier, Src: fragPosition
+Type : type_declaration, Src: vec4f
+Type : identifier, Src: vec4f
+Type : }, Src: }
+Type : attribute, Src: @group(0)
+Type : identifier, Src: group
+Type : int_literal, Src: 0
+Type : attribute, Src: @binding(0)
+Type : identifier, Src: binding
+Type : int_literal, Src: 0
+Type : uniform, Src: uniform
+Type : identifier, Src: uniforms
+Type : type_declaration, Src: Uniforms
+Type : identifier, Src: Uniforms
+Type : attribute, Src: @group(1)
+Type : identifier, Src: group
+Type : int_literal, Src: 1
+Type : attribute, Src: @binding(0)
+Type : identifier, Src: binding
+Type : int_literal, Src: 0
+Type : identifier, Src: mySampler
+Type : type_declaration, Src: sampler
+Type : sampler, Src: sampler
+Type : attribute, Src: @group(1)
+Type : identifier, Src: group
+Type : int_literal, Src: 1
+Type : attribute, Src: @binding(1)
+Type : identifier, Src: binding
+Type : int_literal, Src: 1
+Type : identifier, Src: myTexture
+Type : type_declaration, Src: texture_2d<f32>
+Type : texture_2d, Src: texture_2d
+Type : attribute, Src: @vertex
+Type : identifier, Src: vertex
+Type : identifier, Src: main
+Type : parameter, Src: input : VertexInput
+Type : identifier, Src: input
+Type : type_declaration, Src: VertexInput
+Type : identifier, Src: VertexInput
+Type : type_declaration, Src: VertexOutput
+Type : identifier, Src: VertexOutput
+Type : {, Src: {
+Type : identifier, Src: output
+Type : type_declaration, Src: VertexOutput
+Type : identifier, Src: VertexOutput
+Type : identifier, Src: output
+Type : identifier, Src: Position
+Type : identifier, Src: uniforms
+Type : identifier, Src: modelViewProjectionMatrix
+Type : identifier, Src: position
+Type : identifier, Src: output
+Type : identifier, Src: fragUV
+Type : identifier, Src: uv
+Type : identifier, Src: output
+Type : identifier, Src: fragPosition
+Type : identifier, Src: position
+Type : identifier, Src: output
+Type : }, Src: }
+Type : attribute, Src: @fragment
+Type : identifier, Src: fragment
+Type : identifier, Src: main
+Type : parameter, Src: @location(0) fragUV: vec2f
+Type : attribute, Src: @location(0)
+Type : identifier, Src: location
+Type : int_literal, Src: 0
+Type : identifier, Src: fragUV
+Type : type_declaration, Src: vec2f
+Type : identifier, Src: vec2f
+Type : parameter, Src: @location(1) fragPosition: vec4f
+Type : attribute, Src: @location(1)
+Type : identifier, Src: location
+Type : int_literal, Src: 1
+Type : identifier, Src: fragPosition
+Type : type_declaration, Src: vec4f
+Type : identifier, Src: vec4f
+Type : attribute, Src: @location(0)
+Type : identifier, Src: location
+Type : int_literal, Src: 0
+Type : type_declaration, Src: vec4f
+Type : identifier, Src: vec4f
+Type : {, Src: {
+Type : type_declaration, Src: textureSample
+Type : identifier, Src: textureSample
+Type : identifier, Src: myTexture
+Type : identifier, Src: mySampler
+Type : identifier, Src: fragUV
+Type : identifier, Src: fragPosition
+Type : }, Src: }

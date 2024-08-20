@@ -1,4 +1,4 @@
-embed_files(embedded_files ./triangle.wgsl)
+embed_files(embedded_files ./shaders/triangle.wgsl)
 
 file(GLOB_RECURSE TDGE_SRC_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.cpp)
 file(GLOB_RECURSE TDGE_HEADER_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.h)
@@ -91,3 +91,6 @@ else()
   endif()
   target_link_libraries(wgpu_app PUBLIC SDL2-static webgpu)
 endif()
+
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

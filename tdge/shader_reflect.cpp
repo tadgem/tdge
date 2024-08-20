@@ -24,9 +24,12 @@ static std::vector<std::string> g_relevant_token_types =
         "struct_declaration",
         "struct_member",
         "struct",
+        "sampler",
+        "texture_2d",
+        "texture_3d",
         "ERROR",
         "{",
-        "}"
+        "}",
 };
 
 static constexpr bool g_enable_token_filtering = true;
@@ -72,11 +75,21 @@ struct Parser {
         std::string type;
     };
 
+    struct sampler
+    {
+        uint16_t        set;
+        uint16_t        binding;
+        std::string     name;
+
+    };
+
+
+
     std::unordered_map<std::string, type>           concrete_types;
     std::unordered_map<std::string, generic_type>   generic_types;
     std::unordered_map<std::string, user_type>      user_types;
     std::unordered_map<std::string, uniform>        uniforms;
-
+    std::unordered_map<std::string, sampler>        samplers;
 
     Parser()
     {
@@ -269,34 +282,53 @@ struct Parser {
         uniforms.emplace(uniform_name, uniform {uniform_set, uniform_binding, uniform_name, uniform_type});
     }
 
+    void handle_new_sampler(std::vector<TokenMapping>& tokens, int& head)
+    {
+        std::string sampler_name    = tokens[head - 2].token_src;
+        uint16_t set                = std::stoi(tokens[head - 6].token_src);
+        uint16_t binding            = std::stoi(tokens[head - 3].token_src);
+
+        samplers.emplace(sampler_name, sampler{set, binding, sampler_name});
+    }
+
+    void handle_new_texture_2d(std::vector<TokenMapping>& tokens, int& head)
+    {
+
+    }
+
     void parse(std::vector<TokenMapping> tokens)
     {
         for (int head = 0; head < tokens.size(); head++)
         {
             auto&   token = tokens[head];
-            // Aliases
-            {
-                auto alias_matches = get_alias_matches(token.token_src);
-                // found a type alias
-                if (!alias_matches.empty()) {
-                    handle_alias(alias_matches);
-                }
+
+            auto alias_matches = get_alias_matches(token.token_src);
+            // found a type alias
+            if (!alias_matches.empty()) {
+                handle_alias(alias_matches);
             }
 
             // Non generic user-types
+            if(token.token_type == "struct")
             {
-                if(token.token_type == "struct")
-                {
-                    handle_new_usertype(tokens, head);
-                }
+                handle_new_usertype(tokens, head);
             }
 
             // uniforms
+            if (token.token_type == "uniform")
             {
-                if (token.token_type == "uniform")
-                {
-                    handle_new_uniform(tokens, head);
-                }
+                handle_new_uniform(tokens, head);
+            }
+
+            // samplers
+            if (token.token_type == "sampler")
+            {
+                handle_new_sampler(tokens, head);
+            }
+
+            if (token.token_type == "texture_2d")
+            {
+                handle_new_texture_2d(tokens, head);
             }
         }
     }
