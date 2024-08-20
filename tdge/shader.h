@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include <memory>
 #include <webgpu/webgpu_cpp.h>
 #include <vector>
 
@@ -26,7 +27,7 @@ public:
         std::vector<sampler_data>           samplers;
     };
 
-    static wgpu::ShaderModule   compile_wgsl(const char* src);
-    static reflection_data      reflect_wgsl(const char* src);
+    static wgpu::ShaderModule                   compile_wgsl(const char* src);
+    static std::unique_ptr<reflection_data>     reflect_wgsl(const char* src);
 };
 }

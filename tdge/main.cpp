@@ -43,8 +43,8 @@ int main(int argc, const char **argv)
     const char* wgsl_src = reinterpret_cast<const char *>(triangle_wgsl);
 
     wgpu::ShaderModule              shader_module   = tdg::shader::compile_wgsl(wgsl_src);
-    // tdg::shader::reflection_data    reflect_data    = tdg::shader::reflect_wgsl(wgsl_src);
-    tdg::shader::reflection_data    tex_reflect     = tdg::shader::reflect_wgsl(texture_shader.c_str());
+    auto    reflect_data    = tdg::shader::reflect_wgsl(wgsl_src);
+    //tdg::shader::reflection_data    tex_reflect     = tdg::shader::reflect_wgsl(texture_shader.c_str());
     
     // Upload vertex data
     const std::vector<float> vertex_data = {
@@ -59,28 +59,13 @@ int main(int argc, const char **argv)
 
     // we need:
     // each vertex attribute + size + offset;
-    // for now, assume uniforms are bound in vertex + frag
-
-
-    std::array<wgpu::VertexAttribute, 2> vertex_attributes;
-    vertex_attributes[0].format = wgpu::VertexFormat::Float32x4;
-    vertex_attributes[0].offset = 0;
-    vertex_attributes[0].shaderLocation = 0;
-
-    vertex_attributes[1].format = wgpu::VertexFormat::Float32x4;
-    vertex_attributes[1].offset = 4 * 4;
-    vertex_attributes[1].shaderLocation = 1;
-
-    wgpu::VertexBufferLayout vertex_buf_layout;
-    vertex_buf_layout.arrayStride = 2 * 4 * 4;
-    vertex_buf_layout.attributeCount = vertex_attributes.size();
-    vertex_buf_layout.attributes = vertex_attributes.data();
+    // for now, assume uniforms are bound in vertex + frag;
 
     wgpu::VertexState vertex_state;
     vertex_state.module = shader_module;
     vertex_state.entryPoint = "vertex_main";
     vertex_state.bufferCount = 1;
-    vertex_state.buffers = &vertex_buf_layout;
+    vertex_state.buffers = &reflect_data->vertex_attributes.front().layout;
 
 
 

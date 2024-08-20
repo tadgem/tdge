@@ -93,6 +93,7 @@ struct Parser {
         std::string type;
     };
 
+    std::unordered_map<std::string, std::string>    aliases;
     std::unordered_map<std::string, type>           concrete_types;
     std::unordered_map<std::string, generic_type>   generic_types;
     std::unordered_map<std::string, user_type>      user_types;
@@ -142,6 +143,14 @@ struct Parser {
             return;
         }
 
+        std::string fully_qualified_generic_name = generic_name + "<" + concrete_name + ">";
+
+        if (concrete_types.find(fully_qualified_generic_name) != concrete_types.end())
+        {
+            aliases.emplace(alias_name, fully_qualified_generic_name);
+            return;
+        }
+
         auto& concrete_type = concrete_types[concrete_name];
 
         type new_alias_type = {};
@@ -157,9 +166,6 @@ struct Parser {
         concrete_types.emplace("f32", type{"f32", 4});
         concrete_types.emplace("f16", type{"f16", 2});
         concrete_types.emplace("bool", type{"bool", 1});
-        concrete_types.emplace("vec2f", type{"vec2f", 8});
-        concrete_types.emplace("vec3f", type{"vec3f", 12});
-        concrete_types.emplace("vec4f", type{"vec4f", 16});
 
 
         generic_types.emplace("vec2", generic_type{"vec2", 2, 0});
@@ -180,9 +186,16 @@ struct Parser {
                 std::string alias_name = generic_name  + "<" +
                                          concrete_name + ">";
 
-                handle_generic_alias(alias_name, generic_name, concrete_name);
+                concrete_types.emplace(
+                    alias_name, type {
+                        alias_name, (concrete_type.type_size * generic_type.size_multi) +
+                                        generic_type.size_offset});
             }
         }
+        
+        aliases.emplace("vec2f", "vec2<f32>");
+        aliases.emplace("vec3f", "vec3<f32>");
+        aliases.emplace("vec4f", "vec4<f32>");
     }
 
     void handle_concrete_alias(std::string alias_name, std::string concrete_name)
@@ -192,10 +205,7 @@ struct Parser {
             std::cerr << "Unknown concrete type : " << concrete_name << std::endl;
             return;
         }
-        type new_alias_type = {};
-        new_alias_type.type_name = alias_name;
-        new_alias_type.type_size = concrete_types[concrete_name].type_size;
-        concrete_types.emplace(alias_name, new_alias_type);
+        aliases.emplace(alias_name, concrete_name);
     }
 
     void handle_alias(std::vector<std::string> matches)
@@ -221,6 +231,11 @@ struct Parser {
         if (user_types.find(name) != user_types.end())
         {
             return user_types[name].type_size;
+        }
+
+        if (aliases.find(name) != aliases.end())
+        {
+            return concrete_types[aliases[name]].type_size;
         }
 
         if (concrete_types.find(name) != concrete_types.end())
@@ -325,7 +340,69 @@ struct Parser {
         textures.emplace(name, texture{set, binding, 2, name, type});
     }
 
-    tdg::shader::reflection_data parse(std::vector<TokenMapping> tokens)
+    wgpu::VertexFormat get_vertex_format_from_reflected_type(std::string type)
+    {
+        std::string type_t = type;
+        if (aliases.find(type) != aliases.end())
+        {
+            type_t = aliases[type];
+        }
+
+        if (type_t == "f32") { return wgpu::VertexFormat::Float32; }
+        if (type_t == "vec2<f32>") { return wgpu::VertexFormat::Float32x2; }
+        if (type_t == "vec3<f32>") { return wgpu::VertexFormat::Float32x3; }
+        if (type_t == "vec4<f32>") { return wgpu::VertexFormat::Float32x4; }
+
+        if (type_t == "vec2<f16>") { return wgpu::VertexFormat::Float16x2; }
+        if (type_t == "vec4<f16>") { return wgpu::VertexFormat::Float16x4; }
+
+        if (type_t == "i32")       { return wgpu::VertexFormat::Sint32;    }
+        if (type_t == "vec2<i32>") { return wgpu::VertexFormat::Sint32x2;  }
+        if (type_t == "vec3<i32>") { return wgpu::VertexFormat::Sint32x3;  }
+        if (type_t == "vec4<i32>") { return wgpu::VertexFormat::Sint32x4;  }
+        
+        if (type_t == "u32") { return wgpu::VertexFormat::Uint32; }
+        if (type_t == "vec2<u32>") { return wgpu::VertexFormat::Uint32x2;}
+        if (type_t == "vec3<u32>") { return wgpu::VertexFormat::Uint32x3;}
+        if (type_t == "vec4<u32>") { return wgpu::VertexFormat::Uint32x4;}
+
+
+        return wgpu::VertexFormat::Undefined;
+    }
+
+    void handle_wgpu_vertex_attributes(tdg::shader::reflection_data* data)
+    {
+        if (vertex_input_structure == "")
+        {
+            std::cerr << "Unable to identify the vertex shader input structure" << std::endl;
+            return;
+        }
+
+        auto &type = user_types[vertex_input_structure];
+
+        std::vector<wgpu::VertexAttribute> attributes;
+        uint32_t stride = 0;
+        for (auto& member : type.members)
+        {
+            wgpu::VertexAttribute attr{};
+            attr.offset += member.member_offset;
+            attr.format = get_vertex_format_from_reflected_type(member.type);
+            attr.shaderLocation = std::stoi(member.attribute_value);
+            stride += member.member_size;
+            attributes.push_back(attr);
+        
+        }
+
+        auto& vert_data = data->vertex_attributes.emplace_back(tdg::shader::reflection_data::vertex_attibute_data{});
+        vert_data.attributes = attributes;
+        wgpu::VertexBufferLayout attributes_layout{};
+        attributes_layout.arrayStride = stride;
+        attributes_layout.attributeCount = vert_data.attributes.size();
+        attributes_layout.attributes = vert_data.attributes.data();
+        vert_data.layout = attributes_layout;
+    }
+
+    std::unique_ptr<tdg::shader::reflection_data> parse(std::vector<TokenMapping> tokens)
     {
         for (int head = 0; head < tokens.size(); head++)
         {
@@ -365,7 +442,9 @@ struct Parser {
                 vertex_input_structure = tokens[head + 5].token_src;
             }
         }
-        tdg::shader::reflection_data reflection_data{};
+        auto reflection_data = std::make_unique<tdg::shader::reflection_data>();
+
+        handle_wgpu_vertex_attributes(reflection_data.get());
 
 
         return reflection_data;
@@ -417,7 +496,7 @@ void walk_tree(TSNode node, std::string& original_source, std::vector<TokenMappi
 }
 
 
-tdg::shader::reflection_data tdg::shader::reflect_wgsl(const char* src)
+std::unique_ptr<tdg::shader::reflection_data> tdg::shader::reflect_wgsl(const char* src)
 {
     // Create a parser.
     TSParser* parser = ts_parser_new();
@@ -439,7 +518,5 @@ tdg::shader::reflection_data tdg::shader::reflect_wgsl(const char* src)
     }
 
     Parser token_parser {};
-    token_parser.parse(tokens);
-
-    return {};
+    return token_parser.parse(tokens);
 }
