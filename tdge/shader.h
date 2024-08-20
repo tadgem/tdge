@@ -14,6 +14,8 @@ public:
         };
 
         struct vertex_attibute_data {
+            std::vector<wgpu::VertexAttribute>  attributes;
+            wgpu::VertexBufferLayout            layout;
         };
 
         struct sampler_data {

@@ -99,6 +99,7 @@ struct Parser {
     std::unordered_map<std::string, uniform>        uniforms;
     std::unordered_map<std::string, sampler>        samplers;
     std::unordered_map<std::string, texture>        textures;
+    std::string                                     vertex_input_structure;
 
 
     Parser()
@@ -324,7 +325,7 @@ struct Parser {
         textures.emplace(name, texture{set, binding, 2, name, type});
     }
 
-    void parse(std::vector<TokenMapping> tokens)
+    tdg::shader::reflection_data parse(std::vector<TokenMapping> tokens)
     {
         for (int head = 0; head < tokens.size(); head++)
         {
@@ -358,7 +359,16 @@ struct Parser {
             {
                 handle_new_texture_2d(tokens, head);
             }
+
+            if (token.token_type == "attribute" && token.token_src == "@vertex")
+            {
+                vertex_input_structure = tokens[head + 5].token_src;
+            }
         }
+        tdg::shader::reflection_data reflection_data{};
+
+
+        return reflection_data;
     }
 };
 

@@ -57,6 +57,11 @@ int main(int argc, const char **argv)
     };
     app_state->vertex_buf = tdg::engine::create_buffer(vertex_data.data(), vertex_data.size(), wgpu::BufferUsage::Vertex);
 
+    // we need:
+    // each vertex attribute + size + offset;
+    // for now, assume uniforms are bound in vertex + frag
+
+
     std::array<wgpu::VertexAttribute, 2> vertex_attributes;
     vertex_attributes[0].format = wgpu::VertexFormat::Float32x4;
     vertex_attributes[0].offset = 0;
@@ -76,6 +81,8 @@ int main(int argc, const char **argv)
     vertex_state.entryPoint = "vertex_main";
     vertex_state.bufferCount = 1;
     vertex_state.buffers = &vertex_buf_layout;
+
+
 
     wgpu::ColorTargetState render_target_state;
     render_target_state.format = wgpu::TextureFormat::BGRA8Unorm;
