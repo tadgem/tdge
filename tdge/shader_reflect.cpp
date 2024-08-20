@@ -83,13 +83,22 @@ struct Parser {
 
     };
 
-
+    struct texture
+    {
+        uint16_t set;
+        uint16_t binding;
+        uint16_t dim;
+        std::string name;
+        std::string type;
+    };
 
     std::unordered_map<std::string, type>           concrete_types;
     std::unordered_map<std::string, generic_type>   generic_types;
     std::unordered_map<std::string, user_type>      user_types;
     std::unordered_map<std::string, uniform>        uniforms;
     std::unordered_map<std::string, sampler>        samplers;
+    std::unordered_map<std::string, texture>        textures;
+
 
     Parser()
     {
@@ -154,6 +163,9 @@ struct Parser {
         generic_types.emplace("mat2x2", generic_type{"mat2x2", 4, 0});
         generic_types.emplace("mat3x3", generic_type{"mat3x3", 9, 0});
         generic_types.emplace("mat4x4", generic_type{"mat4x4", 16, 0});
+
+        generic_types.emplace("texture_2d", generic_type{"texture_2d", 1, 0});
+        generic_types.emplace("texture_3d", generic_type{"texture_2d", 1, 0});
 
         auto base_concrete_types = concrete_types;
 
@@ -293,7 +305,12 @@ struct Parser {
 
     void handle_new_texture_2d(std::vector<TokenMapping>& tokens, int& head)
     {
+        uint16_t set        = std::stoi(tokens[head - 6].token_src);
+        uint16_t binding    = std::stoi(tokens[head - 3].token_src);
+        std::string name    = tokens[head - 2].token_src;
+        std::string type    = tokens[head - 1].token_src;
 
+        textures.emplace(name, texture{set, binding, 2, name, type});
     }
 
     void parse(std::vector<TokenMapping> tokens)
